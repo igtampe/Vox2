@@ -1,16 +1,18 @@
 ﻿Imports SpeechLib
 Imports Vox2.BasicRender
-Imports Vox2.VBTyper
 Module Main
 
     Public MyVoices() As Speaker
     Public LastTalked As Integer
     Public SelectedVoice As Integer
+    Public DefaultVoice As SpObjectToken
 
-    Sub Main()
+    Sub Main(ByVal args() As String)
         'mode con:cols = 70 lines=25
 
         Console.Title = "Vox 2.0"
+
+
         Color(ConsoleColor.Black, ConsoleColor.White)
 
         Console.SetWindowSize(100, 40)
@@ -19,6 +21,12 @@ Module Main
         ReDim Preserve MyVoices(1)
         LastTalked = -1
         MyVoices(0) = New Speaker("Default", ConsoleColor.White)
+        DefaultVoice = MyVoices(SelectedVoice).GetVoice()
+
+        If args.Count > 0 Then
+            StoryTime(args(0))
+            Exit Sub
+        End If
 
         Dim WelcomeText As String
 
@@ -114,6 +122,92 @@ Module Main
         End While
 
     End Sub
+
+    Public Sub StoryTime(File As String)
+        FileOpen(1, File, OpenMode.Input)
+        Dim Title As String = LineInput(1)
+        Dim AuthorSubtitle As String = LineInput(1)
+        Dim NumberOfActors As Integer
+        ToChat(0, Title & ", " & AuthorSubtitle)
+
+        Dim Read As String
+        Dim CurrentCharacter As Integer
+
+        While Not (EOF(1))
+            Read = LineInput(1)
+            If Read = "" Then
+            ElseIf Read.StartsWith(":") Then
+                NumberOfActors = Read(1).ToString
+                ToChat(0, "A Play for " & NumberOfActors & " Voices")
+                ReDim Preserve MyVoices(NumberOfActors)
+            ElseIf Read.StartsWith("=") Then
+                Exit While
+            Else
+                MyVoices(CurrentCharacter) = New Speaker(Read.Split(",")(0), StringToColor(Read.Split(",")(1)))
+                CurrentCharacter = CurrentCharacter + 1
+            End If
+        End While
+
+        Dim ActorsSequentially As String = ""
+
+        For I = 0 To NumberOfActors - 2
+            ActorsSequentially = ActorsSequentially & MyVoices(I).Name & ", "
+        Next
+        ActorsSequentially = ActorsSequentially & "and " & MyVoices(NumberOfActors - 1).Name & "."
+
+        ToChat(0, "For this story, you'll need " & NumberOfActors & " Actors, these being " & ActorsSequentially)
+
+        For I = 0 To NumberOfActors - 1
+            ToChat(0, "Please select a voice and pitch for " & MyVoices(I).Name)
+            SelectedVoice = I
+            SelectAVoice()
+            SelectAPitch()
+        Next
+
+        SelectedVoice = 0
+        ToChat(0, "Alright! We're ready to start. Press a key when you're ready")
+        Pause()
+
+        LastTalked = -1
+
+        Color(ConsoleColor.Black, ConsoleColor.White)
+        Console.Clear()
+        Render()
+
+        ToChat(0, Title & ", " & AuthorSubtitle)
+
+        While Not EOF(1)
+            Read = LineInput(1)
+            If Read = "" Then
+            ElseIf Read.StartsWith("[") Then
+                SelectedVoice = FindCharacter(Read.Substring(1, Read.Length - 2))
+            ElseIf Read.ToUpper.StartsWith(":WAIT") Then
+                Sleep(Read.Split(" ")(1))
+            Else
+                ToChat(SelectedVoice, Read)
+            End If
+        End While
+
+        Sleep(500)
+        ToChat(0, "The story is done. Press a key to close vox.")
+
+
+
+    End Sub
+
+    Public Function FindCharacter(Name As String)
+        For I = 0 To MyVoices.Length - 1
+            If IsNothing(MyVoices(I)) Then
+            Else
+                If MyVoices(I).Name = Name Then
+                    Return I
+                End If
+
+
+            End If
+        Next
+        Return 0
+    End Function
 
     Public Sub TextNote(ErrorText As String, BG As ConsoleColor, FG As ConsoleColor)
         Box(BG, 93, 1, 2, 2)
@@ -269,10 +363,43 @@ SkipVoiceDemo:
 
     End Sub
 
+    Public Sub SelectAPitch()
+        Dim selectedpitch As Integer = 0
+        Dim KeyPressed As ConsoleKeyInfo
+        Dim PrevDirection As Integer = 1
+
+        Color(ConsoleColor.DarkGreen, ConsoleColor.Yellow)
+
+        While True
+            Box(ConsoleColor.DarkGreen, 93, 1, 2, 2)
+            SetPos(3, 2)
+
+            Echo("Select a Pitch: " & selectedpitch)
+            MyVoices(SelectedVoice).SetPitch(selectedpitch)
+            MyVoices(SelectedVoice).say(selectedpitch)
+
+            KeyPressed = Console.ReadKey()
+
+            If KeyPressed.Key = ConsoleKey.Enter Then
+                Return
+            ElseIf KeyPressed.Key = ConsoleKey.UpArrow Then
+                selectedpitch = selectedpitch + 1
+
+            ElseIf KeyPressed.Key = ConsoleKey.DownArrow Then
+                selectedpitch = selectedpitch - 1
+            ElseIf KeyPressed.Key = ConsoleKey.PageDown Then
+                selectedpitch = -10
+            ElseIf KeyPressed.Key = ConsoleKey.PageUp Then
+                selectedpitch = 10
+            End If
+
+        End While
+    End Sub
+
     Public Sub SelectAVoice()
         Dim Voices As ISpeechObjectTokens = MyVoices(SelectedVoice).ListVoices
         Dim OriginalVoice As SpObjectToken = MyVoices(SelectedVoice).GetVoice()
-        Dim SelectedVoiceIndex = 0
+        Dim SelectedVoiceIndex = -1
         Dim KeyPressed As ConsoleKeyInfo
         Dim PrevDirection As Integer = 1
 
@@ -282,15 +409,22 @@ SkipVoiceDemo:
 RetryVoice:
             Box(ConsoleColor.DarkBlue, 93, 1, 2, 2)
             SetPos(3, 2)
-            Echo("(" & SelectedVoiceIndex + 1 & "/" & Voices.Count & ") " & Voices.Item(SelectedVoiceIndex).GetDescription)
 
-            MyVoices(SelectedVoice).SetVoice(SelectedVoiceIndex)
+            If SelectedVoiceIndex = -1 Then
+                Echo("(" & SelectedVoiceIndex + 2 & "/" & Voices.Count + 1 & ") " & DefaultVoice.GetDescription)
+                MyVoices(SelectedVoice).SetVoice(DefaultVoice)
+            Else
+                Echo("(" & SelectedVoiceIndex + 2 & "/" & Voices.Count + 1 & ") " & Voices.Item(SelectedVoiceIndex).GetDescription)
+                MyVoices(SelectedVoice).SetVoice(SelectedVoiceIndex)
+            End If
+
             Try
-                MyVoices(0).say("I'm " & MyVoices(0).GetName)
+                MyVoices(SelectedVoice).say("Hi, I'm " & MyVoices(SelectedVoice).GetName)
             Catch ex As Exception
+                Debug.Print("Could Not have " & MyVoices(0).GetVoice.GetDescription & " talk. Maybe they're shy?")
                 SelectedVoiceIndex = SelectedVoiceIndex + (1 * PrevDirection)
 
-                If SelectedVoiceIndex = -1 Then
+                If SelectedVoiceIndex = -2 Then
                     SelectedVoiceIndex = Voices.Count - 1
                 End If
 
@@ -313,7 +447,7 @@ RetryVoice:
             ElseIf KeyPressed.Key = ConsoleKey.UpArrow Then
                 PrevDirection = -1
                 SelectedVoiceIndex = SelectedVoiceIndex - 1
-                If SelectedVoiceIndex = -1 Then
+                If SelectedVoiceIndex = -2 Then
                     SelectedVoiceIndex = Voices.Count - 1
                 End If
 
@@ -321,7 +455,7 @@ RetryVoice:
                 PrevDirection = 1
                 SelectedVoiceIndex = SelectedVoiceIndex + 1
                 If SelectedVoiceIndex = Voices.Count Then
-                    SelectedVoiceIndex = 0
+                    SelectedVoiceIndex = -1
                 End If
             End If
 
