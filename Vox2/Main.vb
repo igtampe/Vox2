@@ -1,5 +1,6 @@
 ﻿Imports SpeechLib
 Imports Vox2.BasicRender
+Imports Vox2.VBTyper
 Module Main
 
     Public MyVoices() As Speaker
@@ -515,17 +516,17 @@ RetryVoice:
         Next
     End Sub
 
-    Public Sub Type(Doot As String, Optional delay As Integer = 5)
+    'Public Sub Type(Doot As String, Optional delay As Integer = 5)
 
-        For X = 0 To Doot.Length - 1
+    'For X = 0 To Doot.Length - 1
+    '
+    '   Console.Write(Doot(X))
+    'If Not delay = 0 Then Threading.Thread.Sleep(delay)
+    '
+    'Next '
+    '
 
-            Console.Write(Doot(X))
-            If Not delay = 0 Then Threading.Thread.Sleep(delay)
 
-        Next
-
-
-
-    End Sub
+    'End Sub
 
 End Module
