@@ -219,13 +219,13 @@ Public Class BasicRender
             If Title.Count >= length Then Exit Do
             Title = "═" & Title
             If Title.Count >= length Then Exit Do
-            Title = Title & "═"
+            Title &= "═"
         Loop
         Dim bottomborder As String = "═"
 
         Do
             If bottomborder.Count = Title.Count Then Exit Do
-            bottomborder = bottomborder & "═"
+            bottomborder &= "═"
         Loop
 
 
@@ -239,7 +239,7 @@ Public Class BasicRender
 
             For SmallLength = 1 To length Step CInt(length / height)
                 If Not SmallHeight = height Then
-                    SmallHeight = SmallHeight + 1
+                    SmallHeight += 1
                 End If
                 Box(WindowBackgroundColor, SmallLength, SmallHeight, leftpos, toppos)
                 Sleep(5)
@@ -279,7 +279,7 @@ Public Class BasicRender
 
             For SmallLength = 1 To length + 2 Step CInt(length / height)
                 If Not SmallHeight = height + 1 Then
-                    SmallHeight = SmallHeight + 1
+                    SmallHeight += 1
                 End If
                 Box(WindowClearCOlor, SmallLength, SmallHeight, leftpos, toppos)
                 Sleep(5)
@@ -778,7 +778,7 @@ rerenderdialogbox:
             While Not EOF(1)
                 ReDim Preserve Graphic(I)
                 Graphic(I) = LineInput(1)
-                I = I + 1
+                I += 1
             End While
             FileClose(1)
 
@@ -811,7 +811,7 @@ rerenderdialogbox:
             While Not EOF(1)
                 ReDim Preserve Graphic(I)
                 Graphic(I) = LineInput(1)
-                I = I + 1
+                I += 1
             End While
             FileClose(1)
 
