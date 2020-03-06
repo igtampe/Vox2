@@ -136,6 +136,7 @@ Module Main
     End Sub
 
     Public Sub StoryTime(File As String)
+
         FileOpen(1, File, OpenMode.Input)
         Dim Title As String = LineInput(1)
         Dim AuthorSubtitle As String = LineInput(1)
@@ -368,6 +369,9 @@ SkipVoiceDemo:
                 Text &= KeyPressed.KeyChar
             End If
         End While
+
+        'If this was executed there was a bit of a problemita
+        Return "oh no"
 
     End Function
 
